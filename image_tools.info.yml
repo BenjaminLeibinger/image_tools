@@ -1,0 +1,6 @@
+name: Tools for Image optimization
+type: module
+description: Provides tools for converting and resizing images.
+package: Image Optimize
+core: 8.x
+
