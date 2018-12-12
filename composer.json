@@ -9,7 +9,8 @@
         }
     ],
     "require": {
-        "php": ">=5.6.0"
+        "php": ">=5.6.0",
+        "burdamagazinorg/thunder": "~8.2"
     },
     "extra": {
         "drush": {
