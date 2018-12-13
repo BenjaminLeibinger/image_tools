@@ -9,6 +9,7 @@
 namespace Drupal\image_tools\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Url;
 use Drupal\image_tools\Services\ImageService;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\Entity\File;
@@ -57,7 +58,7 @@ class ImageToolsController extends  ControllerBase
         }
 
         $content = [
-            '#title' => 'Convertible JPGs',
+            '#title' => 'Convert PNGs',
             '#theme' => 'show_convertible_pngs_page',
             '#rows' => $rows
         ];
@@ -78,7 +79,7 @@ class ImageToolsController extends  ControllerBase
         }
 
         $content = [
-            '#title' => 'Resizable JPGs',
+            '#title' => 'Resize JPGs',
             '#theme' => 'show_resizable_jpgs_page',
             '#max_width' => $this->imageService::DEFAULT_MAX_WIDTH,
             '#rows' => $rows
@@ -99,7 +100,7 @@ class ImageToolsController extends  ControllerBase
         );
 
         batch_set($batch);
-        return batch_process('image_tools.show_convertible_pngs');
+        return batch_process( Url::fromRoute('image_tools.show_convertible_pngs'));
     }
 
 
@@ -115,7 +116,7 @@ class ImageToolsController extends  ControllerBase
         );
 
         batch_set($batch);
-        return batch_process('image_tools.show_resizeable_jpgs');
+        return batch_process(Url::fromRoute('image_tools.show_resizeable_jpgs'));
     }
 
     private function getFid(File $file)
