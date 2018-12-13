@@ -8,9 +8,9 @@ use Drupal\Core\Database\Connection;
 use Drupal\file\Entity\File;
 use Drupal\media_entity\Entity\Media;
 
-const DEFAULT_MAX_WIDTH = 2048;
-
 class ImageService {
+
+    const DEFAULT_MAX_WIDTH = 2048;
 
     /** @var FileSystem */
     private $filesystem;
@@ -63,46 +63,66 @@ class ImageService {
     }
 
 
+    public function convertPngImagesToJpeg(&$context)
+    {
+        $files = $this->loadPngImages();
+
+        if (!isset($context['sandbox']['progress'])) {
+            $context['sandbox']['progress'] = 0;
+            $context['sandbox']['max'] = count($files);
+        }
+
+        $current_size = 0;
+        $new_size = 0;
+        $images_converted = 0;
+        foreach($files as $path => $element)
+        {
+            if(!file_exists($path)){continue;}
+            if($element['transparency']){continue;}
+
+            $current_size += filesize($path);
+            $new_path = $this->convertPngToJpeg($path, $element['file']);
+            $new_size += filesize($new_path);
+
+            $images_converted++;
+            $context['sandbox']['progress'] = $images_converted;
+        }
+
+        $current_size = round($current_size / 1024 / 1024, 2);
+        $new_size = round($new_size / 1024 / 1024, 2);
+
+        return [$images_converted, $current_size, $new_size, $current_size - $new_size];
+    }
+
+
     /**
      * Convert all Images with type png to jpg.
+     *
+     * @param $path
+     * @param File $file
      *
      * @throws
      * @return int
      */
-    public function convertPngToJpeg()
+    public function convertPngToJpeg($path, File $file)
     {
-        $files = $this->loadPngImages();
+        $image_path = dirname($path);
+        $image_name_jpg = preg_replace('"\.png$"', '.jpg', $file->getFilename());
+        $image_path_jpg = $image_path . DIRECTORY_SEPARATOR . $image_name_jpg;
 
-        $images_converted = 0;
-        foreach($files as $path => $element)
-        {
-            if($element['transparency']){continue;}
+        $this->gd_png2jpg($path, $image_path_jpg);
 
-            /** @var File $file */
-            $file = $element['file'];
+        $file->setFileUri(preg_replace('"\.png$"', '.jpg', $file->getFileUri()));
+        $file->setFilename($image_name_jpg);
+        $file->setMimeType('image/jpeg');
 
-            $image_path = dirname($path);
-            $image_name_jpg = preg_replace('"\.png$"', '.jpg', $file->getFilename());
-            $image_path_jpg = $image_path . DIRECTORY_SEPARATOR . $image_name_jpg;
+        $file->save();
+        unlink($path);
 
-            if (extension_loaded('imagick')){
-                $this->imagick_png2jpg($path, $image_path_jpg);
-            }else{
-                $this->gd_png2jpg($path, $image_path_jpg);
-            }
-
-            $file->setFileUri(preg_replace('"\.png$"', '.jpg', $file->getFileUri()));
-            $file->setFilename($image_name_jpg);
-            $file->setMimeType('image/jpeg');
-
-            $file->save();
-            unlink($path);
-
-            $images_converted++;
-        }
-
-        return $images_converted;
+        return $image_path_jpg;
     }
+
+
 
 
     /**
@@ -111,7 +131,7 @@ class ImageService {
      * @return array
      * @throws
      */
-    public function loadLargeImages($max_width, $include_png)
+    public function loadLargeImages($max_width = self::DEFAULT_MAX_WIDTH, $include_png = false)
     {
         $png_type = $include_png ?  " or filemime = 'image/png'" : "";
 
@@ -136,6 +156,8 @@ class ImageService {
 
             $image_path = $this->filesystem->realpath($file->getFileUri());
 
+            if(!file_exists($image_path)){continue;}
+
             $files[$image_path] = ['media' => $media, 'file' => $file];
 
             if($file->getMimeType() === 'image/png'){
@@ -147,17 +169,24 @@ class ImageService {
         return $files;
     }
 
-
     /**
      * @param $max_width
      * @param $include_png
+     * @param array $context
+     * @return array
      * @throws
-     * @return int
      */
-    public function resizeImages($max_width, $include_png)
+    public function resizeImages($max_width, $include_png, &$context)
     {
         $elements = $this->loadLargeImages($max_width, $include_png);
 
+        if (!isset($context['sandbox']['progress'])) {
+            $context['sandbox']['progress'] = 0;
+            $context['sandbox']['max'] = count($elements);
+        }
+
+        $current_size = 0;
+        $new_size = 0;
         $images_converted = 0;
         foreach($elements as $path => $element)
         {
@@ -168,7 +197,9 @@ class ImageService {
 
             $t = isset($element['transparency']) && $element['transparency'];
 
+            $current_size += filesize($path);
             list($new_width, $new_heigth) = $this->resize_image_to_width($max_width, $path, $t);
+            $new_size += filesize($path);
 
             $media_field_image = $media->get('field_image')->getValue();
             $media_field_image[0]['width'] = $new_width;
@@ -179,16 +210,19 @@ class ImageService {
             $thumbnail[0]['width'] = $new_width;
             $thumbnail[0]['height'] = $new_heigth;
             $media->set('thumbnail', $thumbnail);
-
             $media->save();
 
             $file->setSize(filesize($path));
             $file->save();
 
             $images_converted++;
+            $context['sandbox']['progress'] = $images_converted;
         }
 
-        return $images_converted;
+        $current_size = round($current_size / 1024 / 1024, 2);
+        $new_size = round($new_size / 1024 / 1024, 2);
+
+        return [$images_converted, $current_size, $new_size];
     }
 
     /**
@@ -215,6 +249,8 @@ class ImageService {
         imagecopyresampled($new_image, $image, 0, 0, 0, 0, $max_width, $new_height, $width, $height);
 
         $this->save_image($new_image, $filename, $type);
+
+        clearstatcache(true, $filename);
 
         return [$max_width, $new_height];
     }
@@ -303,6 +339,26 @@ class ImageService {
         if(stripos($content,'PLTE') !== false && stripos($content, 'tRNS') !== false) return true;
 
         return false;
+    }
+
+    /**
+     * Finished callback for batch.
+     */
+    public function finished($success, $results, $operations) {
+        $messenger = \Drupal::messenger();
+        $t = \Drupal::translation();
+
+        if($success)
+        {
+            $messenger->addMessage($t->translate(
+                "Converted " . $results['images_converted'] . " images from png to jpg. We had ".$results['old_size']." MB and reduced it to ".$results['new_size']." MB. We saved ".$results['saved_size']." MB"
+            ));
+        }else{
+            $error_operation = reset($operations);
+            $messenger->addMessage($t->translate("Error on Batch operation: ". $error_operation[0]));
+        }
+
+
     }
 
 }

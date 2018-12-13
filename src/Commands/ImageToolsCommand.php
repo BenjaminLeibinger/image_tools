@@ -50,9 +50,10 @@ class ImageToolsCommand extends DrushCommands {
             return;
         }
 
-        $images_converted = $this->imageService->convertPngToJpeg();
+        $context = [];
+        list($images_converted, $current_size, $new_size, $saved_size) = $this->imageService->convertPngImagesToJpeg($context);
 
-        $this->logger()->success(dt("Converted $images_converted images from png to jpg."));
+        $this->logger()->success( "Converted $images_converted images from png to jpg. We had $current_size MB and reduced it to $new_size MB. We saved $saved_size MB." );
     }
 
 
@@ -86,9 +87,10 @@ class ImageToolsCommand extends DrushCommands {
             return;
         }
 
-        $images_converted = $this->imageService->resizeImages($options['max_width'], $options['include_png']);
+        $context = [];
+        list($images_converted, $current_size, $new_size) = $this->imageService->resizeImages($options['max_width'], $options['include_png'], $context);
 
-        $this->logger()->success(dt("Resized $images_converted images to the an max width of ". $options['max_width'] ." pixels."));
+        $this->logger()->success(dt("Resized $images_converted images to the an max width of ". $options['max_width'] ." pixels. We had $current_size MB, now we need $new_size MB."));
     }
 
 
