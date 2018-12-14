@@ -1,7 +1,7 @@
 <p>The following PNG Images where found in the Database.</p>
 
 {% if rows is not empty %}
-    <p><a href="{{ path('image_tools.add_batch_convert_pngs_to_jpgs') }}">{{ 'Convert Images'|t }}</a></p>
+    <p><a href="{{ path('image_tools.add_batch_convert_pngs_to_jpgs') }}" class="button button--primary">{{ 'Convert Images'|t }}</a></p>
     <table class="responsive-enabled" data-striping="1">
         <thead>
         <tr>

@@ -42,7 +42,6 @@ class ImageToolsController extends  ControllerBase
         return [
             '#title' => 'Image Tools Overview',
             '#theme' => 'overview_page',
-            '#name' => 'beni'
         ];
     }
 

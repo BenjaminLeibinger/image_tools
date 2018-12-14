@@ -1,7 +1,7 @@
 <p>The following JPG Images has a size larger than {{ max_width }} Pixel.</p>
 
 {% if rows is not empty %}
-    <p><a href="{{ path('image_tools.add_batch_resize_jpgs') }}">{{ 'Resize Images'|t }}</a></p>
+    <p><a href="{{ path('image_tools.add_batch_resize_jpgs') }}" class="button button--primary">{{ 'Resize Images'|t }}</a></p>
 
     <table class="responsive-enabled" data-striping="1">
         <thead>
