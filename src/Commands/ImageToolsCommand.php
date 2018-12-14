@@ -77,11 +77,11 @@ class ImageToolsCommand extends DrushCommands {
     {
 
         if($options['dry_run']){
-            $files = $this->imageService->loadLargeImages($options['max_width'], $options['include_png']);
+            $files = $this->imageService->findLargeWidthImages($options['max_width'], $options['include_png']);
 
-            foreach($files as $path => $element)
+            foreach($files as $fid => $element)
             {
-                drush_print(basename($path) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
+                drush_print(basename($element['path']) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
             }
 
             return;

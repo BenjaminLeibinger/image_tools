@@ -67,11 +67,11 @@ function drush_image_tools_resize_images(){
     $imageService = \Drupal::service('image_tools.conversion.service');
 
     if($dry_run){
-        $files = $imageService->loadLargeImages($max_width, $include_png);
+        $files = $imageService->findLargeWidthImages($max_width, $include_png);
 
-        foreach($files as $path => $element)
+        foreach($files as $fid => $element)
         {
-            drush_print(basename($path) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
+            drush_print(basename($element['path']) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
         }
 
         return;

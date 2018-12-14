@@ -123,51 +123,55 @@ class ImageService {
     }
 
 
-
-
-    /**
-     * @param $max_width
-     * @param $include_png
-     * @return array
-     * @throws
-     */
-    public function loadLargeImages($max_width = self::DEFAULT_MAX_WIDTH, $include_png = false)
+    public function findLargeWidthImages($max_width = self::DEFAULT_MAX_WIDTH, $include_png = false)
     {
-        $png_type = $include_png ?  " or filemime = 'image/png'" : "";
-
-        $iids = $this->db->query("SELECT fid, entity_id 
-                                  FROM file_managed INNER JOIN media__field_image ON field_image_target_id = fid 
-                                  WHERE field_image_width > :max_width and (filemime = 'image/jpeg' $png_type )",
-            ['max_width' => $max_width]
-        )->fetchAllAssoc('entity_id');
-
-        $media_type_storage = $this->entityManager->getStorage('media');
         $file_storage = $this->entityManager->getStorage('file');
+        $result = $file_storage->loadByProperties(['filemime' => 'image/jpeg']);
 
-        $media_images = $media_type_storage->loadMultiple(array_keys($iids));
-        $image_files = $file_storage->loadMultiple(array_column($iids, 'fid'));
+        if($include_png){
+            $pngs = $file_storage->loadByProperties(['filemime' => 'image/png']);
+            $result = array_merge($result, $pngs);
+        }
 
         $files = [];
-        foreach($media_images as $media) {
-            /** @var Media $media */
-            $media_field_image = $media->get('field_image')->getValue();
+        foreach($result as $file) {
             /** @var File $file */
-            $file = $image_files[$media_field_image[0]['target_id']];
-
             $image_path = $this->filesystem->realpath($file->getFileUri());
 
             if(!file_exists($image_path)){continue;}
 
-            $files[$image_path] = ['media' => $media, 'file' => $file];
+            list($width, $height, $type) = getimagesize($image_path);
 
-            if($file->getMimeType() === 'image/png'){
-                $t = $this->detect_transparency($image_path);
-                $files[$image_path]['transparency'] = $t;
+            if($width > $max_width){
+                $fid = $this->getFid($file);
+                $files[$fid] = ['file' => $file, 'path' => $image_path];
+
+                if($type === IMAGETYPE_PNG){
+                    $files[$fid]['transparency'] = $this->detect_transparency($image_path);
+                }
+            }
+        }
+
+        /**
+         * Table exists in burdamagazinorg/thunder-project and needs also be updated.
+         */
+        if($this->db->schema()->tableExists('media__field_image'))
+        {
+            $media_type_storage = $this->entityManager->getStorage('media');
+            $media_images = $media_type_storage->loadMultiple(array_keys($files));
+
+            foreach($media_images as $media) {
+                /** @var Media $media */
+                $media_field_image = $media->get('field_image')->getValue();
+                $fid = $media_field_image[0]['target_id'];
+
+                $files[$fid]['media'] = $media;
             }
         }
 
         return $files;
     }
+
 
     /**
      * @param $max_width
@@ -178,7 +182,7 @@ class ImageService {
      */
     public function resizeImages($max_width, $include_png, &$context)
     {
-        $elements = $this->loadLargeImages($max_width, $include_png);
+        $elements = $this->findLargeWidthImages($max_width, $include_png);
 
         if (!isset($context['sandbox']['progress'])) {
             $context['sandbox']['progress'] = 0;
@@ -188,29 +192,32 @@ class ImageService {
         $current_size = 0;
         $new_size = 0;
         $images_converted = 0;
-        foreach($elements as $path => $element)
+        foreach($elements as $element)
         {
-            /** @var Media $media */
-            $media = $element['media'];
             /** @var File $file */
             $file = $element['file'];
-
+            $path = $element['path'];
             $t = isset($element['transparency']) && $element['transparency'];
 
             $current_size += filesize($path);
             list($new_width, $new_heigth) = $this->resize_image_to_width($max_width, $path, $t);
             $new_size += filesize($path);
 
-            $media_field_image = $media->get('field_image')->getValue();
-            $media_field_image[0]['width'] = $new_width;
-            $media_field_image[0]['height'] = $new_heigth;
-            $media->set('field_image', $media_field_image);
 
-            $thumbnail = $media->get('thumbnail')->getValue();
-            $thumbnail[0]['width'] = $new_width;
-            $thumbnail[0]['height'] = $new_heigth;
-            $media->set('thumbnail', $thumbnail);
-            $media->save();
+            if(isset($element['media'])){
+                /** @var Media $media */
+                $media = $element['media'];
+                $media_field_image = $media->get('field_image')->getValue();
+                $media_field_image[0]['width'] = $new_width;
+                $media_field_image[0]['height'] = $new_heigth;
+                $media->set('field_image', $media_field_image);
+
+                $thumbnail = $media->get('thumbnail')->getValue();
+                $thumbnail[0]['width'] = $new_width;
+                $thumbnail[0]['height'] = $new_heigth;
+                $media->set('thumbnail', $thumbnail);
+                $media->save();
+            }
 
             $file->setSize(filesize($path));
             $file->save();
@@ -237,7 +244,7 @@ class ImageService {
         $image = $this->load_image($filename, $type);
 
         $ratio = $max_width / $width;
-        $new_height = $height * $ratio;
+        $new_height = round($height * $ratio);
 
         $new_image = imagecreatetruecolor($max_width, $new_height);
 
@@ -359,6 +366,13 @@ class ImageService {
         }
 
 
+    }
+
+    private function getFid(File $file)
+    {
+        $fid = $file->get('fid')->getValue();
+
+        return $fid[0]['value'];
     }
 
 }

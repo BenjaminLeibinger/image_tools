@@ -68,13 +68,13 @@ class ImageToolsController extends  ControllerBase
 
     public function showResizableJPGs()
     {
-        $images = $this->imageService->loadLargeImages();
+        $images = $this->imageService->findLargeWidthImages();
 
         $rows = [];
-        foreach($images as $path => $element)
+        foreach($images as $fid => $element)
         {
             $transparency = isset($element['transparency']) && $element['transparency'] ? "x" : "";
-            $rows[] = [ 'fid' => $this->getFid($element['file']),  'name' => basename($path), 't' => $transparency];
+            $rows[] = [ 'fid' => $fid,  'name' => basename($element['path']), 't' => $transparency];
         }
 
         $content = [
