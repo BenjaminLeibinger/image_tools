@@ -42,9 +42,9 @@ class ImageToolsCommand extends DrushCommands {
         if($options['dry_run']){
             $files = $this->imageService->loadPngImages();
 
-            foreach($files as $path => $element)
+            foreach($files as $fid => $element)
             {
-                drush_print(basename($path) . ($element['transparency'] ? " | has transparency (alpha channel)." : ""));
+                drush_print($fid . " | " . basename($element['path']) . ($element['transparency'] ? " | has transparency (alpha channel)." : ""));
             }
 
             return;
@@ -80,7 +80,7 @@ class ImageToolsCommand extends DrushCommands {
 
             foreach($files as $fid => $element)
             {
-                drush_print(basename($element['path']) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
+                drush_print($fid . " | " . basename($element['path']) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
             }
 
             return;

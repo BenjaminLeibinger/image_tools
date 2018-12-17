@@ -56,7 +56,8 @@ class ImageService {
             $image_path = $this->filesystem->realpath($file->getFileUri());
             $t = $this->detect_transparency($image_path);
 
-            $files[$image_path] = ['file' => $file, 'transparency' => $t];
+            $fid = $this->getFid($file);
+            $files[$fid] = ['file' => $file, 'path' => $image_path, 'transparency' => $t];
         }
 
         return $files;
@@ -70,13 +71,13 @@ class ImageService {
         $current_size = 0;
         $new_size = 0;
         $images_converted = 0;
-        foreach($files as $path => $element)
+        foreach($files as $fid => $element)
         {
-            if(!file_exists($path)){continue;}
+            if(!file_exists($element['path'])){continue;}
             if($element['transparency']){continue;}
 
-            $current_size += filesize($path);
-            $new_path = $this->convertPngToJpeg($path, $element['file']);
+            $current_size += filesize($element['path']);
+            $new_path = $this->convertPngToJpeg($element['path'], $element['file']);
             $new_size += filesize($new_path);
 
             $images_converted++;
