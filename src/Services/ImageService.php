@@ -346,26 +346,6 @@ class ImageService {
         return false;
     }
 
-    /**
-     * Finished callback for batch.
-     */
-    public function finished($success, $results, $operations) {
-        $messenger = \Drupal::messenger();
-        $t = \Drupal::translation();
-
-        if($success)
-        {
-            $messenger->addMessage($t->translate(
-                "Converted " . $results['images_converted'] . " images from png to jpg. We had ".$results['old_size']." MB and reduced it to ".$results['new_size']." MB. We saved ".$results['saved_size']." MB"
-            ));
-        }else{
-            $error_operation = reset($operations);
-            $messenger->addMessage($t->translate("Error on Batch operation: ". $error_operation[0]));
-        }
-
-
-    }
-
     private function getFid(File $file)
     {
         $fid = $file->get('fid')->getValue();
