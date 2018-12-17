@@ -52,8 +52,7 @@ function drush_image_tools_convert_png_to_jpg() {
         return;
     }
 
-    $context = [];
-    list($images_converted, $current_size, $new_size, $saved_size)  = $imageService->convertPngImagesToJpeg($context);
+    list($images_converted, $current_size, $new_size, $saved_size)  = $imageService->convertPngImagesToJpeg();
 
     drush_print("Converted $images_converted images from png to jpg. We had $current_size MB and reduced it to $new_size MB. We saved $saved_size MB.");
 }
@@ -77,8 +76,7 @@ function drush_image_tools_resize_images(){
         return;
     }
 
-    $context = [];
-    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($max_width, $include_png, $context);
+    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($max_width, $include_png);
 
     drush_print("Resized $images_converted images to the an max width of ". $max_width ." pixels. We had $current_size MB, now we need $new_size MB.");
 }

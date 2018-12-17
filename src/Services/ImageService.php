@@ -63,14 +63,9 @@ class ImageService {
     }
 
 
-    public function convertPngImagesToJpeg(&$context)
+    public function convertPngImagesToJpeg()
     {
         $files = $this->loadPngImages();
-
-        if (!isset($context['sandbox']['progress'])) {
-            $context['sandbox']['progress'] = 0;
-            $context['sandbox']['max'] = count($files);
-        }
 
         $current_size = 0;
         $new_size = 0;
@@ -85,7 +80,6 @@ class ImageService {
             $new_size += filesize($new_path);
 
             $images_converted++;
-            $context['sandbox']['progress'] = $images_converted;
         }
 
         $current_size = round($current_size / 1024 / 1024, 2);
@@ -123,6 +117,12 @@ class ImageService {
     }
 
 
+    /**
+     * @param $max_width
+     * @param $include_png
+     * @return array
+     * @throws
+     */
     public function findLargeWidthImages($max_width, $include_png)
     {
         $file_storage = $this->entityManager->getStorage('file');
@@ -181,18 +181,12 @@ class ImageService {
     /**
      * @param $max_width
      * @param $include_png
-     * @param array $context
      * @return array
      * @throws
      */
-    public function resizeImages($max_width, $include_png, &$context)
+    public function resizeImages($max_width, $include_png)
     {
         $elements = $this->findLargeWidthImages($max_width, $include_png);
-
-        if (!isset($context['sandbox']['progress'])) {
-            $context['sandbox']['progress'] = 0;
-            $context['sandbox']['max'] = count($elements);
-        }
 
         $current_size = 0;
         $new_size = 0;
@@ -228,7 +222,6 @@ class ImageService {
             $file->save();
 
             $images_converted++;
-            $context['sandbox']['progress'] = $images_converted;
         }
 
         $current_size = round($current_size / 1024 / 1024, 2);

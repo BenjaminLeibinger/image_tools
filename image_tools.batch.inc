@@ -8,7 +8,7 @@ function convertPngsToJpg(&$context)
     /** @var \Drupal\image_tools\Services\ImageService $imageService */
     $imageService = \Drupal::service('image_tools.conversion.service');
 
-    list($images_converted, $current_size, $new_size) = $imageService->convertPngImagesToJpeg($context);
+    list($images_converted, $current_size, $new_size) = $imageService->convertPngImagesToJpeg();
 
     $context['results']['images_converted'] = $images_converted;
     $context['results']['old_size'] = $current_size;
@@ -22,7 +22,7 @@ function resizeJPGs($max_width, $include_pngs, &$context)
     /** @var \Drupal\image_tools\Services\ImageService $imageService */
     $imageService = \Drupal::service('image_tools.conversion.service');
 
-    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($max_width, $include_pngs, $context);
+    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($max_width, $include_pngs);
 
     $context['results']['images_converted'] = $images_converted;
     $context['results']['old_size'] = $current_size;
