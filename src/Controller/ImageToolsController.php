@@ -11,8 +11,10 @@ namespace Drupal\image_tools\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
 use Drupal\image_tools\Services\ImageService;
+use Drupal\image_tools\Form\ResizeJpgsForm;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\file\Entity\File;
+use Symfony\Component\HttpFoundation\Request;
 
 
 class ImageToolsController extends  ControllerBase
@@ -66,22 +68,34 @@ class ImageToolsController extends  ControllerBase
         return $content;
     }
 
-    public function showResizableJPGs()
+    public function showResizableJPGs(Request $request)
     {
-        $images = $this->imageService->findLargeWidthImages();
+        $include_png = $request->query->get('include_png') === null ? false : true;
+        $max_width = $request->query->get('max_width', $this->imageService::DEFAULT_MAX_WIDTH);
+
+        if($max_width <= 0){
+            $max_width = $this->imageService::DEFAULT_MAX_WIDTH;
+        }
+
+        $images = $this->imageService->findLargeWidthImages($max_width, $include_png);
 
         $rows = [];
         foreach($images as $fid => $element)
         {
             $transparency = isset($element['transparency']) && $element['transparency'] ? "x" : "";
-            $rows[] = [ 'fid' => $fid,  'name' => basename($element['path']), 't' => $transparency];
+            $rows[] = [ 'fid' => $fid,
+                        'name' => basename($element['path']),
+                        'size' => $element['width'] . 'x' . $element['height'],
+                        't' => $transparency];
         }
 
         $content = [
             '#title' => 'Resize JPGs',
             '#theme' => 'show_resizable_jpgs_page',
-            '#max_width' => $this->imageService::DEFAULT_MAX_WIDTH,
-            '#rows' => $rows
+            '#max_width' => $max_width,
+            '#png' => $include_png ? 'yes' : 'no',
+            '#rows' => $rows,
+            '#form' => $this->formBuilder()->getForm(ResizeJpgsForm::class, $max_width, $include_png)
         ];
 
         return $content;
@@ -103,12 +117,15 @@ class ImageToolsController extends  ControllerBase
     }
 
 
-    public function addBatchResizeJPGs()
+    public function addBatchResizeJPGs(Request $request)
     {
+        $include_png = $request->query->get('png', 'no') === 'yes' ? true : false;
+        $max_width = $request->query->get('max_width', $this->imageService::DEFAULT_MAX_WIDTH);
+
         $batch = array(
             'title' => t('Resizing JPGs'),
             'operations' => [
-                ['resizeJPGs', [$this->imageService::DEFAULT_MAX_WIDTH, false]],
+                ['resizeJPGs', [$max_width, $include_png]],
             ],
             'finished' => 'jpg_resizing_finished',
             'file' => drupal_get_path('module', 'image_tools') . '/image_tools.batch.inc',

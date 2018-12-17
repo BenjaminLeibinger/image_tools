@@ -2,8 +2,8 @@
 
 namespace Drupal\image_tools\Services;
 
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
-use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Database\Connection;
 use Drupal\file\Entity\File;
 use Drupal\media_entity\Entity\Media;
@@ -15,7 +15,7 @@ class ImageService {
     /** @var FileSystem */
     private $filesystem;
 
-    /** @var EntityTypeManager */
+    /** @var EntityTypeManagerInterface */
     private $entityManager;
 
     /** @var Connection */
@@ -24,10 +24,10 @@ class ImageService {
     /**
      * DrushImageCommandsCommands constructor.
      * @param FileSystem $filesystem
-     * @param EntityTypeManager $entityManager
+     * @param EntityTypeManagerInterface $entityManager
      * @param Connection $db
      */
-    public function __construct(FileSystem $filesystem, EntityTypeManager $entityManager, Connection $db)
+    public function __construct(FileSystem $filesystem, EntityTypeManagerInterface $entityManager, Connection $db)
     {
         $this->filesystem = $filesystem;
         $this->entityManager = $entityManager;
@@ -123,7 +123,7 @@ class ImageService {
     }
 
 
-    public function findLargeWidthImages($max_width = self::DEFAULT_MAX_WIDTH, $include_png = false)
+    public function findLargeWidthImages($max_width, $include_png)
     {
         $file_storage = $this->entityManager->getStorage('file');
         $result = $file_storage->loadByProperties(['filemime' => 'image/jpeg']);
@@ -144,7 +144,7 @@ class ImageService {
 
             if($width > $max_width){
                 $fid = $this->getFid($file);
-                $files[$fid] = ['file' => $file, 'path' => $image_path];
+                $files[$fid] = ['file' => $file, 'path' => $image_path, 'width' => $width, 'height' => $height];
 
                 if($type === IMAGETYPE_PNG){
                     $files[$fid]['transparency'] = $this->detect_transparency($image_path);
@@ -155,17 +155,22 @@ class ImageService {
         /**
          * Table exists in burdamagazinorg/thunder-project and needs also be updated.
          */
-        if($this->db->schema()->tableExists('media__field_image'))
+        if(!empty($files) && $this->db->schema()->tableExists('media__field_image'))
         {
+            $connection = \Drupal::database();
+            $mids = $connection->query("SELECT entity_id FROM media__field_image where field_image_target_id IN (:fids[])", [':fids[]' => array_keys($files)])->fetchAllAssoc('entity_id');
+
             $media_type_storage = $this->entityManager->getStorage('media');
-            $media_images = $media_type_storage->loadMultiple(array_keys($files));
+            $media_images = $media_type_storage->loadMultiple(array_keys($mids));
 
             foreach($media_images as $media) {
                 /** @var Media $media */
-                $media_field_image = $media->get('field_image')->getValue();
-                $fid = $media_field_image[0]['target_id'];
+                if($media->hasField('field_image')){
+                    $media_field_image = $media->get('field_image')->getValue();
+                    $fid = $media_field_image[0]['target_id'];
 
-                $files[$fid]['media'] = $media;
+                    $files[$fid]['media'] = $media;
+                }
             }
         }
 

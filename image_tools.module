@@ -6,7 +6,7 @@
  */
 function image_tools_theme() {
     $theme['overview_page'] = [
-        'variables' => ['name' => NULL],
+        'variables' => ['name' => null],
         'template' => 'overview',
     ];
 
@@ -16,7 +16,7 @@ function image_tools_theme() {
     ];
 
     $theme['show_resizable_jpgs_page'] = [
-        'variables' => ['max_width' => NULL, 'rows' => []],
+        'variables' => ['max_width' => null, 'rows' => [], 'form' => null, 'png' => null],
         'template' => 'show_resizable_jpgs',
     ];
 

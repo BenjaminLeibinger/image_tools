@@ -1,13 +1,24 @@
-<p>The following JPG Images has a size larger than {{ max_width }} Pixel.</p>
+<div style="padding-bottom: 10px;">
+    <form {{form.attributes }}>
+        {{ form.form_build_id }}
+        {{ form.form_token }}
+        {{ form.form_id }}
+        {{ form.max_width }}
+        {{ form.include_png }}
+        {{ form.actions.submit }}
+    </form>
+</div>
 
 {% if rows is not empty %}
-    <p><a href="{{ path('image_tools.add_batch_resize_jpgs') }}" class="button button--primary">{{ 'Resize Images'|t }}</a></p>
+    <p>The following JPG Images has a size larger than {{ max_width }} Pixel.
+        <a href="{{ path('image_tools.add_batch_resize_jpgs', {'max_width': max_width, 'png': png }) }}" class="button button--primary">{{ 'Resize Images'|t }}</a></p>
 
     <table class="responsive-enabled" data-striping="1">
         <thead>
         <tr>
             <th>Image ID</th>
             <th>Filename</th>
+            <th>Size</th>
             <th>Transparency</th>
         </tr>
         </thead>
@@ -17,6 +28,7 @@
                 <tr class="{{ cycle(['odd', 'even'], loop.index0) }}">
                     <td>{{ row.fid }}</td>
                     <td>{{ row.name }}</td>
+                    <td>{{ row.size }}</td>
                     <td>{{ row.t }}</td>
                 </tr>
             {% endfor %}
