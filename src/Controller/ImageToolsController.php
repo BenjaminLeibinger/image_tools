@@ -13,7 +13,6 @@ use Drupal\Core\Url;
 use Drupal\image_tools\Services\ImageService;
 use Drupal\image_tools\Form\ResizeJpgsForm;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Drupal\file\Entity\File;
 use Symfony\Component\HttpFoundation\Request;
 
 
@@ -52,10 +51,10 @@ class ImageToolsController extends  ControllerBase
         $images = $this->imageService->loadPngImages();
 
         $rows = [];
-        foreach($images as $path => $element)
+        foreach($images as $fid => $element)
         {
             $transparency = $element['transparency'] ? "x" : "";
-            $rows[] = [ 'fid' => $this->getFid($element['file']),  'name' => basename($path), 't' => $transparency];
+            $rows[] = [ 'fid' => $fid,  'name' => basename($element['path']), 't' => $transparency];
         }
 
         $content = [
@@ -133,12 +132,5 @@ class ImageToolsController extends  ControllerBase
 
         batch_set($batch);
         return batch_process(Url::fromRoute('image_tools.show_resizeable_jpgs'));
-    }
-
-    private function getFid(File $file)
-    {
-        $fid = $file->get('fid')->getValue();
-
-        return $fid[0]['value'];
     }
 }
