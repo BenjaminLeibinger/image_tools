@@ -6,6 +6,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\File\FileSystem;
 use Drupal\Core\Database\Connection;
 use Drupal\file\Entity\File;
+use Drupal\file\FileInterface;
 use Drupal\media_entity\Entity\Media;
 
 class ImageService {
@@ -347,7 +348,7 @@ class ImageService {
         return false;
     }
 
-    private function getFid(File $file)
+    public function getFid(FileInterface $file)
     {
         $fid = $file->get('fid')->getValue();
 
