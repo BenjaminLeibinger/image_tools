@@ -40,10 +40,9 @@ function drush_image_tools_convert_png_to_jpg() {
     /** @var ImageService $imageService */
     $imageService = \Drupal::service('image_tools.conversion.service');
 
+    $files = $imageService->loadPngImages();
+
     if($dry_run){
-
-        $files = $imageService->loadPngImages();
-
         foreach($files as $fid => $element)
         {
             drush_print($fid . " | " . basename($element['path']) . ($element['transparency'] ? " | has transparency (alpha channel)." : ""));
@@ -52,7 +51,7 @@ function drush_image_tools_convert_png_to_jpg() {
         return;
     }
 
-    list($images_converted, $current_size, $new_size, $saved_size)  = $imageService->convertPngImagesToJpeg();
+    list($images_converted, $current_size, $new_size, $saved_size)  = $imageService->convertPngImagesToJpeg($files);
 
     drush_print("Converted $images_converted images from png to jpg. We had $current_size MB and reduced it to $new_size MB. We saved $saved_size MB.");
 }
@@ -64,10 +63,10 @@ function drush_image_tools_resize_images(){
 
     /** @var ImageService $imageService */
     $imageService = \Drupal::service('image_tools.conversion.service');
+    $files = $imageService->findLargeWidthImages($max_width, $include_png);
+
 
     if($dry_run){
-        $files = $imageService->findLargeWidthImages($max_width, $include_png);
-
         foreach($files as $fid => $element)
         {
             drush_print($fid . " | " . basename($element['path']) . (isset($element['transparency']) && $element['transparency'] ? " | has transparency (alpha channel)." : ""));
@@ -76,7 +75,7 @@ function drush_image_tools_resize_images(){
         return;
     }
 
-    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($max_width, $include_png);
+    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($files, $max_width);
 
     drush_print("Resized $images_converted images to the an max width of ". $max_width ." pixels. We had $current_size MB, now we need $new_size MB.");
 }

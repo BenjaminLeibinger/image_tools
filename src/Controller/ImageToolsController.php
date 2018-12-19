@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 class ImageToolsController extends  ControllerBase
 {
+    const BATCH_IMAGE_COUNT = 50;
+
 
     /** @var ImageService $imageService */
     private $imageService;
@@ -102,11 +104,22 @@ class ImageToolsController extends  ControllerBase
 
     public function addBatchConvertPNGs()
     {
+        $images = $this->imageService->loadPngImages();
+
+        $operations = [];
+        if(count($images) > self::BATCH_IMAGE_COUNT){
+            $array_chunks = array_chunk($images, self::BATCH_IMAGE_COUNT, true);
+
+            foreach($array_chunks as $images){
+                $operations[] = ['convertPngsToJpg', [$images]];
+            }
+        }else{
+            $operations[] = ['convertPngsToJpg', [$images]];
+        }
+
         $batch = array(
             'title' => t('Converting PNGs to JPGs'),
-            'operations' => [
-                ['convertPngsToJpg', []],
-            ],
+            'operations' => $operations,
             'finished' => 'png_conversion_finished',
             'file' => drupal_get_path('module', 'image_tools') . '/image_tools.batch.inc',
         );
@@ -115,22 +128,50 @@ class ImageToolsController extends  ControllerBase
         return batch_process( Url::fromRoute('image_tools.show_convertible_pngs'));
     }
 
-
     public function addBatchResizeJPGs(Request $request)
     {
         $include_png = $request->query->get('png', 'no') === 'yes' ? true : false;
         $max_width = $request->query->get('max_width', $this->imageService::DEFAULT_MAX_WIDTH);
 
+        $images = $this->imageService->findLargeWidthImages($max_width, $include_png);
+
+        $operations = [];
+        if(count($images) > self::BATCH_IMAGE_COUNT){
+            $array_chunks = array_chunk($images, self::BATCH_IMAGE_COUNT, true);
+
+            foreach($array_chunks as $images){
+                $operations[] = ['resizeJPGs', [$images, $max_width]];
+            }
+        }else{
+            $operations[] = ['resizeJPGs', [$images, $max_width]];
+        }
+
         $batch = array(
             'title' => t('Resizing JPGs'),
-            'operations' => [
-                ['resizeJPGs', [$max_width, $include_png]],
-            ],
+            'operations' => $operations,
             'finished' => 'jpg_resizing_finished',
             'file' => drupal_get_path('module', 'image_tools') . '/image_tools.batch.inc',
         );
 
         batch_set($batch);
         return batch_process(Url::fromRoute('image_tools.show_resizeable_jpgs'));
+    }
+
+    private function getOperations($images, $function)
+    {
+        $size = count($images);
+
+        $operations = [];
+        if($size > self::BATCH_IMAGE_COUNT){
+            $array_chunks = array_chunk($images, self::BATCH_IMAGE_COUNT, true);
+
+            foreach($array_chunks as $images){
+                $operations[] = [$function, [$images]];
+            }
+        }else{
+            $operations[] = [$function, [$images]];
+        }
+
+        return $operations;
     }
 }

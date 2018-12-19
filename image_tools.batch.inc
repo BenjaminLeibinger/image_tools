@@ -3,30 +3,30 @@
 
 
 
-function convertPngsToJpg(&$context)
+function convertPngsToJpg($images, &$context)
 {
     /** @var \Drupal\image_tools\Services\ImageService $imageService */
     $imageService = \Drupal::service('image_tools.conversion.service');
 
-    list($images_converted, $current_size, $new_size) = $imageService->convertPngImagesToJpeg();
+    list($images_converted, $old_size, $new_size) = $imageService->convertPngImagesToJpeg($images);
 
-    $context['results']['images_converted'] = $images_converted;
-    $context['results']['old_size'] = $current_size;
-    $context['results']['new_size'] = $new_size;
-    $context['results']['saved_size'] = $current_size - $new_size;
+    $context['results']['images_converted'] = isset($context['results']['images_converted']) ? $context['results']['images_converted'] + $images_converted : $images_converted;
+    $context['results']['old_size'] = isset($context['results']['old_size']) ? $context['results']['old_size'] + $old_size : $old_size;
+    $context['results']['new_size'] = isset($context['results']['new_size']) ? $context['results']['new_size'] + $new_size : $new_size;
+    $context['results']['saved_size'] = isset($context['results']['saved_size']) ? $context['results']['saved_size'] + ($old_size - $new_size) : ($old_size - $new_size);
 }
 
 
-function resizeJPGs($max_width, $include_pngs, &$context)
+function resizeJPGs($images, $max_width, &$context)
 {
     /** @var \Drupal\image_tools\Services\ImageService $imageService */
     $imageService = \Drupal::service('image_tools.conversion.service');
 
-    list($images_converted, $current_size, $new_size) = $imageService->resizeImages($max_width, $include_pngs);
+    list($images_converted, $old_size, $new_size) = $imageService->resizeImages($images, $max_width);
 
-    $context['results']['images_converted'] = $images_converted;
-    $context['results']['old_size'] = $current_size;
-    $context['results']['new_size'] = $new_size;
+    $context['results']['images_converted'] = isset($context['results']['images_converted']) ? $context['results']['images_converted'] + $images_converted : $images_converted;
+    $context['results']['old_size'] = isset($context['results']['old_size']) ? $context['results']['old_size'] + $old_size : $old_size;
+    $context['results']['new_size'] = isset($context['results']['new_size']) ? $context['results']['new_size'] + $new_size : $new_size;
 }
 
 

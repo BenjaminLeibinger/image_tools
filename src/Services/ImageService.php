@@ -64,11 +64,12 @@ class ImageService {
         return $files;
     }
 
-
-    public function convertPngImagesToJpeg()
+    /**
+     * @param $files
+     * @return array
+     */
+    public function convertPngImagesToJpeg($files)
     {
-        $files = $this->loadPngImages();
-
         $current_size = 0;
         $new_size = 0;
         $images_converted = 0;
@@ -181,19 +182,17 @@ class ImageService {
 
 
     /**
+     * @param $images
      * @param $max_width
-     * @param $include_png
      * @return array
      * @throws
      */
-    public function resizeImages($max_width, $include_png)
+    public function resizeImages($images, $max_width)
     {
-        $elements = $this->findLargeWidthImages($max_width, $include_png);
-
         $current_size = 0;
         $new_size = 0;
         $images_converted = 0;
-        foreach($elements as $element)
+        foreach($images as $element)
         {
             /** @var File $file */
             $file = $element['file'];
