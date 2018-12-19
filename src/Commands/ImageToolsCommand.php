@@ -96,7 +96,9 @@ class ImageToolsCommand extends DrushCommands {
      * @param array $options
      *   An associative array of options whose values come from cli, aliases, config, etc.
      * @option amount
-     *   The amount of images to create.
+     *   The amount of images to create. Default: 1000
+     * @option width
+     *   The width of images. Default: 2100
      *
      * @command image:create:demo
      * @aliases i:cd
