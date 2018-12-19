@@ -22,8 +22,6 @@ class ResizeJpgsForm extends FormBase
 
     public function buildForm(array $form, FormStateInterface $form_state, $max_width = 2048, $include_png = false)
     {
-        $form['#attributes']['class'][] = 'heyho';
-
         $form['include_png'] = array(
             '#type' => 'checkbox',
             '#title' => t('Include PNGs'),

@@ -1,17 +1,21 @@
 <div style="padding-bottom: 10px;">
     <form {{form.attributes }}>
-        {{ form.form_build_id }}
-        {{ form.form_token }}
-        {{ form.form_id }}
-        {{ form.max_width }}
-        {{ form.include_png }}
-        {{ form.actions.submit }}
+        <div class="form--inline clearfix">
+            {{ form.max_width }}
+            <div style="padding-top: 25px">
+                {{ form.include_png }}
+            </div>
+            <div data-drupal-selector="edit-actions" class="form-actions js-form-wrapper form-wrapper" id="search-actions">
+                {{ form.actions.submit }}
+            </div>
+        </div>
     </form>
 </div>
 
 {% if rows is not empty %}
-    <p>The following JPG Images has a size larger than {{ max_width }} Pixel.
-        <a href="{{ path('image_tools.add_batch_resize_jpgs', {'max_width': max_width, 'png': png }) }}" class="button button--primary">{{ 'Resize Images'|t }}</a></p>
+    <p>The following {{ rows|length }} JPG Images has a width larger than {{ max_width }} Pixel.
+        <a href="{{ path('image_tools.add_batch_resize_jpgs', {'max_width': max_width, 'png': png }) }}" class="button button--primary">{{ 'Resize Images'|t }}</a>
+    </p>
 
     <table class="responsive-enabled" data-striping="1">
         <thead>
